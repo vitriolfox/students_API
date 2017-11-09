@@ -4,6 +4,31 @@ const bodyParser = require('body-parser');
 const hbs = require('hbs');
 const methodOverride = require('method-override');
 const path = require('path');
+const mysql = require('mysql');
+require('dotenv').config();
+
+var connection = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE
+});
+
+connection.connect();
+
+const studentsTable = `create table if not exists students(
+  id int auto_increment, 
+  name varchar(100), 
+  sex boolean, 
+  score int, 
+  age int, 
+  primary key(id)
+);`;
+
+connection.query(studentsTable, function (err, rows, fields) {
+  if (err) throw err;
+  console.log('Students table created.');
+});
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -24,42 +49,25 @@ hbs.registerHelper('currentPage', (pages, pageNumber, options) => {
 hbs.registerPartials(path.join(__dirname, '/views/partials'));
 
 app.get('/students', (request, response) => {
-  let limit = parseInt(request.query.limit) || 5;
-  let pageFrom;
-  let pageEnd;
-  let pageNumber = parseInt(request.query.page) || 1;
-  let next = pageNumber + 1;
-  let prev = pageNumber - 1;
-  let firstPage = pageNumber > 1;
-  let lastPage = pageNumber < students.length / limit;
-
-  let pages = [];
-  let n = 1;
-  for (let i = 0; i < students.length / limit; i++) {
-    pages[i] = n;
-    n++;
-  }
-
-  if (parseInt(request.query.page) <= 1 || request.query.page === undefined) {
-    pageFrom = 0;
-    pageEnd = limit;
-  } else {
-    pageFrom = (parseInt(request.query.page) - 1) * limit;
-    pageEnd = pageFrom + limit;
-  }
-  let studentList = students.slice(pageFrom, pageEnd);
-  response.format({
-    'text/html': () => response.render('students/index', {
-      students: studentList,
-      pageNumber: pageNumber,
-      next: next,
-      prev: prev,
-      firstPage: firstPage,
-      lastPage: lastPage,
-      pages: pages
-
-    }),
-    'application/json': () => response.json({students: studentList})
+  const list = `SELECT * FROM students;`;
+  connection.query(list, function (err, rows, fields) {
+    if (err) throw err;
+    if (rows && rows.length > 0) {
+      const students = rows;
+      response.format({
+        'text/html': () => response.render('students/index', {
+          students: students
+        }),
+        'application/json': () => response.json({students: students})
+      });
+    } else {
+      response.format({
+        'text/html': () => response.render('students/index', {
+          students: []
+        }),
+        'application/json': () => response.json({students: []})
+      });
+    }
   });
 });
 
@@ -67,16 +75,52 @@ app.get('/students/form', (request, response) => {
   response.render('students/form');
 });
 
-app.get('/students/:name/update', (request, response) => {
-  let student = students.find(student => student.name === request.params.name);
-  response.render('students/update', {student: student});
+app.get('/students/:id/update', (request, response) => {
+  const updateStudentform = `SELECT * FROM students WHERE id='${request.params.id}';`;
+
+  connection.query(updateStudentform, function (err, rows, fields) {
+    if (err) throw err;
+    if (rows && rows.length > 0) {
+      const student = rows[0];
+
+      response.format({
+        'text/html': () => response.render('students/update', {
+          student: student
+        }),
+        'application/json': () => response.json({student: student})
+      });
+    } else {
+      response.format({
+        'text/html': () => response.render('students/update', {
+          student: []
+        }),
+        'application/json': () => response.json({student: []})
+      });
+    }
+  });
 });
 
-app.get('/students/:name', (request, response) => {
-  let student = students.find(student => student.name === request.params.name);
-  response.format({
-    'text/html': () => response.render('students/show', {student: student}),
-    'application/json': () => { response.json({student: student}); }
+app.get('/students/:id', (request, response) => {
+  const show = `SELECT * FROM students WHERE id='${request.params.id}';`;
+  connection.query(show, function (err, rows, fields) {
+    if (err) throw err;
+    if (rows && rows.length > 0) {
+      const student = rows[0];
+
+      response.format({
+        'text/html': () => response.render('students/show', {
+          student: student
+        }),
+        'application/json': () => response.json({student: student})
+      });
+    } else {
+      response.format({
+        'text/html': () => response.render('students/show', {
+          student: []
+        }),
+        'application/json': () => response.json({student: []})
+      });
+    }
   });
 });
 
@@ -94,55 +138,40 @@ app.get('/students', function (request, response) {
 });
 
 app.post('/students', function (request, response) {
-  const newStudent = {
-    name: request.body.name,
-    sex: request.body.sex,
-    score: request.body.score,
-    age: request.body.age
-  };
+  const createStudent = `insert into students (name, sex, score, age) values
+  ('${request.body.name}', '${request.body.sex}', '${request.body.score}', '${request.body.age}');`;
 
-  students.push(newStudent);
-
-  response.format({
-    'text/html': function () {
-      response.redirect('/students');
-    },
-    'application/json': function () {
-      response.json({student: newStudent});
-    }
+  connection.query(createStudent, function (err, rows, fields) {
+    if (err) throw err;
+    response.format({
+      'text/html': () => response.redirect('/students'),
+      'application/json': () => response.redirect('/students')
+    });
   });
 });
 
-app.put('/students/:name', (request, response) => {
-  const updateStudent = {
-    name: request.body.name,
-    sex: request.body.sex,
-    score: request.body.score,
-    age: request.body.age
-  };
-  let indexOfUpdateStudent = students.indexOf(students.find(student => student.name === request.params.name));
-  students.splice(indexOfUpdateStudent, 1);
-  students.splice(indexOfUpdateStudent, 0, updateStudent);
+app.put('/students/:id', (request, response) => {
+  const changeStudent = `update students set name='${request.body.name}', sex='${request.body.sex}', 
+  score='${request.body.score}', age='${request.body.age}' where id='${request.params.id}';`;
 
-  response.format({
-    'text/html': function () {
-      response.redirect('/students/' + updateStudent.name);
-    },
-    'application/json': function () {
-      response.json({student: updateStudent});
-    }
+  connection.query(changeStudent, function (err, rows, fields) {
+    let paramsID = request.params.id;
+    if (err) throw err;
+    response.format({
+      'text/html': () => response.redirect('/students/' + paramsID),
+      'application/json': () => response.redirect('/students/' + paramsID)
+    });
   });
 });
 
-app.delete('/students/:name', (request, response) => {
-  students.splice(students.indexOf(students.find(student => student.name === request.params.name)), 1);
-  response.format({
-    'text/html': function () {
-      response.redirect('/students/');
-    },
-    'application/json': function () {
-      response.json({students: students});
-    }
+app.delete('/students/:id', (request, response) => {
+  const deleteStudent = `DELETE FROM students WHERE id='${request.params.id}';`;
+  connection.query(deleteStudent, function (err, rows, fields) {
+    if (err) throw err;
+    response.format({
+      'text/html': () => response.redirect('/students'),
+      'application/json': () => response.redirect('/students')
+    });
   });
 });
 

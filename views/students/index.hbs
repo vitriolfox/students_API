@@ -21,6 +21,7 @@
  <table class="table">
    <thead>
      <tr>
+       <th>ID</th>
        <th>Név</th>
        <th>Kor</th>
        <th>Nem</th>
@@ -31,14 +32,19 @@
    <tbody>
      {{#each students}}
      <tr>
+       <td>{{id}}</td>
        <td>{{name}}</td>
        <td>{{age}}</td>
-       <td>{{sex}}</td>
+      {{#if sex}}
+        <td>nő</td>
+      {{else}}
+        <td>férfi</td>
+      {{/if}}
        <td>{{score}}</td>
        <td>
-         <a href="/students/{{name}}">Mutat / </a>
-         <a href="/students/{{name}}/update">Adatok frissítése</a>
-         <form action="/students/{{name}}?_method=DELETE" method="POST">
+         <a href="/students/{{id}}">Mutat / </a>
+         <a href="/students/{{id}}/update">Adatok frissítése</a>
+         <form action="/students/{{id}}?_method=DELETE" method="POST">
          <button type="submit" class="btn btn-danger">Töröl</button>
          </form>
 
