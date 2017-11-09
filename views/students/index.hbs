@@ -1,0 +1,74 @@
+{{!-- <ul>
+  {{#each students}}
+    <li>
+      <p>
+        <a href="/students/{{name}}">{{name}}</a>
+      </p>
+      <p>
+        {{sex}}
+      </p>
+      <p>
+        {{score}}
+      </p>
+      <p>
+        {{age}}
+      </p>
+    </li>
+  {{/each}}
+</ul>
+ --}}
+
+ <table class="table">
+   <thead>
+     <tr>
+       <th>Név</th>
+       <th>Kor</th>
+       <th>Nem</th>
+       <th>Pontszám</th>
+       <th>Műveletek</th>
+     </tr>
+   </thead>
+   <tbody>
+     {{#each students}}
+     <tr>
+       <td>{{name}}</td>
+       <td>{{age}}</td>
+       <td>{{sex}}</td>
+       <td>{{score}}</td>
+       <td>
+         <a href="/students/{{name}}">Mutat / </a>
+         <a href="/students/{{name}}/update">Adatok frissítése</a>
+         <form action="/students/{{name}}?_method=DELETE" method="POST">
+         <button type="submit" class="btn btn-danger">Töröl</button>
+         </form>
+
+       </td>
+     </tr>
+     {{/each}}
+   </tbody>
+
+ </table>
+
+<h2>
+    <a href="/students/form">New Student</a>
+</h2>
+
+{{#if lastPage}}
+  <h2>
+    <a href="/students?page={{next}}">Next Page</a>
+  </h2>
+{{/if}}
+
+{{#each pages}}
+  {{#currentPage this ../pageNumber}}
+    <span style="font-weight: bold">{{this}}</span>
+  {{else}}
+    <a href="/students?page={{../this}}">{{../this}}</a>
+  {{/currentPage}}
+{{/each}}
+
+{{#if firstPage}}
+  <h2>
+    <a href="/students?page={{prev}}">Previous Page</a>
+  </h2>
+{{/if}}

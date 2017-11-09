@@ -1,0 +1,14 @@
+<ul>
+  <p>{{student.name}}</p>
+  <p>{{student.sex}}</p>
+  <p>{{student.score}}</p>
+  <p>{{student.age}}</p>
+</ul>
+
+<a href="/students/{{student.name}}/update">Adatok frissítése</a>
+
+<form action="/students/{{student.name}}?_method=DELETE" method="POST">
+  <input type="submit" value="Törlés">
+</form>
+
+<a href="/students">Vissza</a>
