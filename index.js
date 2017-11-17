@@ -1,19 +1,26 @@
-const Model = require('./model');
-const Student = new Model();
 const express = require('express');
-const students = require('./data');
 const bodyParser = require('body-parser');
 const hbs = require('hbs');
 const methodOverride = require('method-override');
 const path = require('path');
 
+require('dotenv').config();
+
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize(process.env.DB_DATABASE, process.env.DB_USER, process.env.DB_PASSWORD, {host: 'localhost', dialect: 'mysql'});
+const student = sequelize.define('student', {
+  name: Sequelize.STRING,
+  sex: Sequelize.BOOLEAN,
+  score: Sequelize.INTEGER,
+  age: Sequelize.INTEGER
+});
+
+const router = require('./routes');
+
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(methodOverride('_method'));
-
-Student.connect();
-Student.init();
 
 app.set('views', './views/');
 app.set('view engine', 'hbs');
@@ -26,92 +33,9 @@ hbs.registerHelper('currentPage', (pages, pageNumber, options) => {
   return options.inverse(this);
 });
 hbs.registerPartials(path.join(__dirname, '/views/partials'));
+app.use('/', router);
 
-app.get('/students/count', (request, response) => {
-  Student.count(function (err, students) {
-    if (err) {
-      response.render('errors/500', {error: err});
-    } else {
-      response.json({count: students});
-    }
-  });
-});
+sequelize.sync()
+.then(() => app.listen(3000));
 
-app.get('/students', (request, response) => {
-  Student.findAll(function (err, students) {
-    if (err) {
-      response.render('errors/500', {error: err});
-    } else {
-      response.render('students/index', {students: students});
-    }
-  });
-});
-
-app.get('/students/form', (request, response) => {
-  response.render('students/form');
-});
-
-app.get('/students/:id/update', (request, response) => {
-  Student.findOne({id: request.params.id}, function (err, student) {
-    if (err) {
-      response.render('errors/500', {error: err});
-    } else {
-      response.render('students/update', {student: student});
-    }
-  });
-});
-
-app.get('/students/:id', (request, response) => {
-  Student.findOne({id: request.params.id}, function (err, student) {
-    if (err) {
-      response.render('errors/500', {error: err});
-    } else {
-      response.render('students/show', {student: student});
-    }
-  });
-});
-
-app.get('/students', function (request, response) {
-  response.format({
-    'text/html': function () {
-      response.render('students/form', {
-        student: students
-      });
-    },
-    'applicaton/json': function () {
-      response.json({students: students});
-    }
-  });
-});
-
-app.post('/students', function (request, response) {
-  Student.create(request.body, function (err, student) {
-    if (err) {
-      response.render('errors/500', {error: err});
-    } else {
-      response.redirect('/students/');
-    }
-  });
-});
-
-app.put('/students/:id', (request, response) => {
-  Student.update(request.params.id, request.body, function (err, student) {
-    if (err) {
-      response.render('errors/500', {error: err});
-    } else {
-      response.redirect('/students/');
-    }
-  });
-});
-
-app.delete('/students/:id', (request, response) => {
-  Student.delete(request.params.id, function (err, student) {
-    if (err) {
-      response.render('errors/500', {error: err});
-    } else {
-      response.redirect('/students/');
-    }
-  });
-});
-
-app.listen(3000, () => console.log('Server is running on port 3000'));
+module.exports = student;

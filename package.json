@@ -15,6 +15,8 @@
     "express": "^4.16.2",
     "hbs": "^4.0.1",
     "method-override": "^2.3.10",
-    "mysql": "^2.15.0"
+    "mysql": "^2.15.0",
+    "mysql2": "^1.5.0",
+    "sequelize": "^4.22.6"
   }
 }
