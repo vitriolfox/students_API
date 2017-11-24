@@ -9,8 +9,8 @@
   <div class="form-group">
     <label for="sex">Nem</label>
     <select class="form-control" name="sex" id="sex" value="{{student.sex}}" required>
-      <option value="0">Férfi</option>
-      <option value="1">Nő</option>
+      <option value="false">Férfi</option>
+      <option value="true" {{#if student.sex}}selected="selected"{{/if}}>Nő</option>
     </select>
   </div>
   <div class="form-group">
